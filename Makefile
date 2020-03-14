@@ -1,17 +1,26 @@
 CC = gcc
-FLAGS = -Wall
-SOURCES = $(wildcard ./src/*.c)
-OBJECTS = $(SOURCES:%.c=%.o)
+FLAGS = -Wall -g3
+TARGETS = src/list.o src/main.o src/monitor.o src/patientRecord.o src/utilities.o
 
-all:diseaseMonitor
+diseaseMonitor:$(TARGETS)
+	$(CC) $(FLAGS) -o diseaseMonitor $(TARGETS)
 
-diseaseMonitor:$(OBJECTS)
-	$(CC) $(FLAGS) -o diseaseMonitor $(OBJECTS)
+src/list.o:src/list.c
+	$(CC) $(FLAGS) -o src/list.o -c src/list.c
 
-%.o:./src/%.c
-	$(CC) $(FLAGS) -o $@ -c $<
+src/main.o:src/main.c
+	$(CC) $(FLAGS) -o src/main.o -c src/main.c
+
+src/monitor.o:src/monitor.c
+	$(CC) $(FLAGS) -o src/monitor.o -c src/monitor.c
+
+src/patientRecord.o:src/patientRecord.c
+	$(CC) $(FLAGS) -o src/patientRecord.o -c src/patientRecord.c
+
+src/utilities.o:src/utilities.c
+	$(CC) $(FLAGS) -o src/utilities.o -c src/utilities.c
 
 .PHONY : clean
 
 clean:
-	rm -f $(OBJECTS) diseaseMonitor
+	rm -f $(TARGETS) diseaseMonitor

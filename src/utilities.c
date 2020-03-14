@@ -24,3 +24,17 @@ int DestroyString(string *str) {
     return FALSE;
   }
 }
+
+unsigned int wordCount(string str) {
+  unsigned int count = 0;
+  // Ignore 1st potential gaps
+  while (*str == ' ') str++;
+  while (*str != '\n') {
+    count++;
+    // Loop through characters
+    while (*str != ' ' && *str != '\n') str++;
+    // Ignore gaps
+    while (*str == ' ') str++;
+  }
+  return count;
+}

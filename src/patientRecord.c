@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,57 +17,100 @@ struct patient_record {
   int exited;
 };
 
-int PatientRecord_Create(patientRecord *record,string recordID,string patientFirstName,string patientLastName,string diseaseID,string country,string entryDate,string exitDate) {
+patientRecord PatientRecord_Create(string line) {
+  // Error check: Ignore record if the line has more than 7 arguments
+  if (wordCount(line) != 7) {
+    printf("Ignored record due to incorrect number of arguments: %s\n",line);
+    return NULL;
+  }
+  patientRecord record;
   // Allocate space for patientRecord object
-  if ((*record = (patientRecord)malloc(sizeof(struct patient_record))) == NULL) {
+  if ((record = (patientRecord)malloc(sizeof(struct patient_record))) == NULL) {
     not_enough_memory();
-    return FALSE;
+    return NULL;
   }
   // Copy record contents
-  if (((*record)->recordID = CopyString(recordID)) == NULL) {
+  if ((record->recordID = CopyString(strtok(line," "))) == NULL) {
     not_enough_memory();
-    return FALSE;
+    PatientRecord_Destroy(&record);
+    return NULL;
   }
-  if (((*record)->patientFirstName = CopyString(patientFirstName)) == NULL) {
+  if ((record->patientFirstName = CopyString(strtok(NULL," "))) == NULL) {
     not_enough_memory();
-    return FALSE;
+    PatientRecord_Destroy(&record);
+    return NULL;
   }
-  if (((*record)->patientLastName = CopyString(patientLastName)) == NULL) {
+  if ((record->patientLastName = CopyString(strtok(NULL," "))) == NULL) {
     not_enough_memory();
-    return FALSE;
+    PatientRecord_Destroy(&record);
+    return NULL;
   }
-  if (((*record)->diseaseID = CopyString(diseaseID)) == NULL) {
+  if ((record->diseaseID = CopyString(strtok(NULL," "))) == NULL) {
     not_enough_memory();
-    return FALSE;
+    PatientRecord_Destroy(&record);
+    return NULL;
   }
-  if (((*record)->country = CopyString(country)) == NULL) {
+  if ((record->country = CopyString(strtok(NULL," "))) == NULL) {
     not_enough_memory();
-    return FALSE;
+    PatientRecord_Destroy(&record);
+    return NULL;
   }
   struct tm tmpTime;
+  memset(&tmpTime,0,sizeof(struct tm));
+  string entryDate = strtok(NULL," ");
   if (strptime(entryDate,"%d-%m-%Y",&tmpTime) == NULL) {
-    printf("entryDate parsing failed!\n");
-    return FALSE;
+    printf("entryDate %s parsing failed!\n",entryDate);
+    return NULL;
   } else {
-    (*record)->entryDate = mktime(&tmpTime);
+    record->entryDate = mktime(&tmpTime);
   }
   // Check if patient exited the hospital and initialize the corresponding fields properly
-  if (strcmp(exitDate,"-")) {
+  string exitDate = strtok(NULL," ");
+  memset(&tmpTime,0,sizeof(struct tm));
+  if (exitDate[0] != '-') {
     if (strptime(exitDate,"%d-%m-%Y",&tmpTime) == NULL) {
-      printf("exitDate parsing failed!\n");
-      return FALSE;
+      printf("exitDate %s parsing failed!\n",exitDate);
+      return NULL;
     } else {
-      (*record)->exitDate = mktime(&tmpTime);
-      (*record)->exited = TRUE;
+      record->exitDate = mktime(&tmpTime);
+      record->exited = TRUE;
     }
   } else {
-    (*record)->exited = FALSE;
+    record->exited = FALSE;
   }
-  return TRUE;
+  // Check if entryDate is later than exitDate and destroy(ignore) the record if so
+  if (record->exited && difftime(record->entryDate,record->exitDate) > 0) {
+    char date1[10],date2[10];
+    strftime(date1,sizeof(date1),"%d-%m-%Y",localtime(&(record->entryDate)));
+    strftime(date2,sizeof(date2),"%d-%m-%Y",localtime(&(record->exitDate)));
+    printf("Ignoring record %s %s %s %s %s %s %s because entryDate is later than exitDate\n",record->recordID,record->patientFirstName,record->patientLastName,record->diseaseID,record->country,date1,date2);
+    PatientRecord_Destroy(&record);
+  }
+  return record;
 }
 
 int PatientRecord_Exited(patientRecord record) {
   return record->exited;
+}
+
+string PatientRecord_Get_recordID(patientRecord record) {
+  return record->recordID;
+}
+
+string PatientRecord_Get_diseaseID(patientRecord record) {
+  return record->diseaseID;
+}
+
+string PatientRecord_Get_country(patientRecord record) {
+  return record->country;
+}
+
+time_t PatientRecord_Get_entryDate(patientRecord record) {
+  return record->entryDate;
+}
+
+time_t PatientRecord_Get_exitDate(patientRecord record) {
+  return record->exitDate;
 }
 
 int PatientRecord_Destroy(patientRecord *record) {

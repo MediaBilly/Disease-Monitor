@@ -62,8 +62,8 @@ int main(int argc, char const *argv[]) {
     // Run diseaseMonitor
     if (DiseaseMonitor_Init(&diseaseMonitor,patientRecordsFile,diseaseHashtableNumOfEntries,countryHashtableNumOfEntries,bucketSize)) {
       DiseaseMonitor_Run(diseaseMonitor);
-      DiseaseMonitror_Destroy(&diseaseMonitor);
     } 
+    DiseaseMonitror_Destroy(&diseaseMonitor);
   } else {
     usage();
     // Close diseaseHashtableNumOfEntries file if it was previously opened
@@ -73,5 +73,6 @@ int main(int argc, char const *argv[]) {
     // Exit due to error
     return 0;
   }
+  fclose(patientRecordsFile);
   return 0;
 }

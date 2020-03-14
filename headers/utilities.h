@@ -9,5 +9,7 @@ typedef char* string;
 void not_enough_memory();
 string CopyString(string);
 int DestroyString(string*);
+// Counts # of words in a string
+unsigned int wordCount(string);
 
 #endif
