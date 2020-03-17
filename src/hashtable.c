@@ -53,7 +53,7 @@ char *CreateBucket(unsigned int bucketSize) {
   memset(bucketData,0,bucketSize);
   return bucketData;
 }
-#include <stdio.h>
+
 int Bucket_InsertRecord(char *bucketData,unsigned int bucketSize,string key,void *value) {
   size_t recordSize = sizeof(string) + sizeof(void*);
   unsigned int offset;

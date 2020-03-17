@@ -47,13 +47,13 @@ int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigne
       } else {
         printf("Record with id %s was found twice in patientRecordsFile.Exiting...\n",PatientRecord_Get_recordID(record));
         PatientRecord_Destroy(&record);
+        free(line);
         return FALSE;
       }
     }
   }
   free(line);
   // For test purposes only. Will be removed later
-  printf("Total records:%u\n",(*monitor)->totalRecords);
   return TRUE;
 }
 
@@ -92,7 +92,8 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
 int DiseaseMonitror_Destroy(DiseaseMonitor *monitor) {
   if (*monitor != NULL) {
     // Destroy data structures
-    HashTable_Destroy(&((*monitor)->recordsHashTable),(int (*)(void**))PatientRecord_Destroy);
+    // Destroy function typecast:(int (*)(void**))func_name 
+    HashTable_Destroy(&((*monitor)->recordsHashTable),NULL);
     List_Destroy(&((*monitor)->recordsList));
     // Destroy monitor itself
     free(*monitor);
