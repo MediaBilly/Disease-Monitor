@@ -82,3 +82,7 @@ string readNextWord(int *lastword) {
     free(buf);
     return word;
 }
+
+void IgnoreRemainingInput() {
+    while (getchar() != '\n');
+}

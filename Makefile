@@ -1,5 +1,5 @@
 CC = gcc
-FLAGS = -Wall
+FLAGS = -Wall -g3
 TARGETS = src/list.o src/main.o src/monitor.o src/patientRecord.o src/utilities.o src/hashtable.o
 
 diseaseMonitor:$(TARGETS)

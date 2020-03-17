@@ -14,5 +14,6 @@ int DestroyString(string*);
 // Counts # of words in a string
 unsigned int wordCount(string);
 string readNextWord(int*);
+void IgnoreRemainingInput();
 
 #endif

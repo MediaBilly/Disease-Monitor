@@ -57,7 +57,7 @@ char *CreateBucket(unsigned int bucketSize) {
 int Bucket_InsertRecord(char *bucketData,unsigned int bucketSize,string key,void *value) {
   size_t recordSize = sizeof(string) + sizeof(void*);
   unsigned int offset;
-  for (offset = 0;offset < bucketSize - sizeof(void*);offset += recordSize) {
+  for (offset = 0;offset <= bucketSize - sizeof(void*) - recordSize;offset += recordSize) {
     string currentKey;
     memcpy(&currentKey,bucketData + offset,sizeof(string));
     // We found an available position to store the new record
@@ -77,13 +77,15 @@ int Bucket_InsertRecord(char *bucketData,unsigned int bucketSize,string key,void
 void* Bucket_SearchKey(char *bucketData,unsigned int bucketSize,string key) {
   size_t recordSize = sizeof(string) + sizeof(void*);
   unsigned int offset = 0;
-  for (offset = 0;offset < bucketSize - sizeof(void*);offset += recordSize) {
+  for (offset = 0;offset <= bucketSize - sizeof(void*) - recordSize;offset += recordSize) {
     string currentKey;
     memcpy(&currentKey,bucketData + offset,sizeof(string));
     // Found
     if (currentKey != NULL) {
       if(!strcmp(currentKey,key)) {
-        return bucketData + offset + sizeof(string) ;
+        char *retValue;
+        memcpy(&retValue,bucketData + offset + sizeof(string),sizeof(void*));
+        return retValue;
       }
     } else {
       return NULL;
@@ -97,7 +99,7 @@ void Bucket_Destroy(char *bucketData,unsigned int bucketSize,int (*DestroyValueS
   size_t recordSize = sizeof(string) + sizeof(void*);
   unsigned int offset = 0;
   // Iterate through all bucket's records
-  for (offset = 0;offset < bucketSize - sizeof(void*);offset += recordSize) {
+  for (offset = 0;offset <= bucketSize - sizeof(void*) - recordSize;offset += recordSize) {
     string currentKey;
     memcpy(&currentKey,bucketData + offset,sizeof(string));
     // Destroy Key

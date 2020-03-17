@@ -16,6 +16,17 @@ struct disease_monitor {
 };
 
 int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigned int diseaseHashtableNumOfEntries,unsigned int countryHashtableNumOfEntries,unsigned int bucketSize) {
+  // Parameter checking
+  if (bucketSize < sizeof(string) + 2*sizeof(void*)) {
+    printf("Minimum bucket size required:%ld bytes\n",sizeof(string) + 2*sizeof(void*));
+    *monitor = NULL;
+    return FALSE;
+  }
+  if (patientRecordsFile == NULL) {
+    printf("patientRecordsFile is not opened.\n");
+    *monitor = NULL;
+    return FALSE;
+  }
   // Allocate space for DiseaseMonitor
   if ((*monitor = (DiseaseMonitor)malloc(sizeof(struct disease_monitor))) == NULL) {
     not_enough_memory();
@@ -59,32 +70,63 @@ int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigne
 
 int DiseaseMonitor_Run(DiseaseMonitor monitor) {
   int running = TRUE,lastword;
-  string argument;
+  string command;
   // Execute commands until /exit is given
   while (running) {
     // Read command name
-    argument = readNextWord(&lastword);
+    putchar('>');
+    command = readNextWord(&lastword);
     // Determine command type
-    if (!strcmp("/globalDiseaseStats",argument)) {
+    if (!strcmp("/globalDiseaseStats",command)) {
       // TODO
-    } else if (!strcmp("/diseaseFrequency",argument)) {
+    } else if (!strcmp("/diseaseFrequency",command)) {
       // TODO
-    } else if (!strcmp("/topk-Diseases",argument)) {
+    } else if (!strcmp("/topk-Diseases",command)) {
       // TODO
-    } else if (!strcmp("/topk-Countries",argument)) {
+    } else if (!strcmp("/topk-Countries",command)) {
       // TODO
-    } else if (!strcmp("/insertPatientRecord",argument)) {
+    } else if (!strcmp("/insertPatientRecord",command)) {
       // TODO
-    } else if (!strcmp("/recordPatientExit",argument)) {
+    } else if (!strcmp("/recordPatientExit",command)) {
+      // Usage check
+      if (!lastword) {
+        // Read recordID
+        string recordID = readNextWord(&lastword);
+        // Usage check
+        if (!lastword) {
+          string exitDate = readNextWord(&lastword);
+          // Usage check
+          if (lastword) {
+            // Check if patient with that name exists
+            patientRecord record;
+            if ((record = (patientRecord)HashTable_SearchKey(monitor->recordsHashTable,recordID)) != NULL) {
+              PatientRecord_Exit(record,exitDate);
+            } else {
+              printf("Patient with ID %s does not exist.\n",recordID);
+            }
+          } else {
+            printf("Usage:/recordPatientExit recordID exitDate\n");
+            IgnoreRemainingInput();
+          }
+          DestroyString(&exitDate);
+        } else {
+          printf("Usage:/recordPatientExit recordID exitDate\n");
+        }
+        DestroyString(&recordID);
+      } else {
+        printf("Usage:/recordPatientExit recordID exitDate\n");
+      }
+    } else if (!strcmp("/numCurrentPatients",command)) {
       // TODO
-    } else if (!strcmp("/numCurrentPatients",argument)) {
-      // TODO
-    } else if (!strcmp("/exit",argument)) {
+    } else if (!strcmp("/exit",command)) {
       running = FALSE;
-      DestroyString(&argument);
     } else {
-      printf("Command %s not found.\n",argument);
+      printf("Command %s not found.\n",command);
+      if (!lastword) {
+        IgnoreRemainingInput();
+      }
     }
+    DestroyString(&command);
   }
   return TRUE;
 }

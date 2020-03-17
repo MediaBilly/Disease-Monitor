@@ -113,6 +113,26 @@ time_t PatientRecord_Get_exitDate(patientRecord record) {
   return record->exitDate;
 }
 
+int PatientRecord_Exit(patientRecord record,string exitDateStr) {
+  struct tm tmpTime;
+  memset(&tmpTime,0,sizeof(struct tm));
+  time_t exitDate;
+  if (strptime(exitDateStr,"%d-%m-%Y",&tmpTime) != NULL) {
+    if (difftime((exitDate = mktime(&tmpTime)),record->entryDate) >= 0) {
+      record->exitDate = exitDate;
+      record->exited = TRUE;
+      printf("exitDate successfully set to %s for patient with ID %s.\n",exitDateStr,record->recordID);
+      return TRUE;
+    } else {
+      printf("The exitDate of the record with id %s is earlier than it's entryDate.Ignoring update.\n",record->recordID);
+      return FALSE;
+    }
+  } else {
+    printf("Wrong date format.\n");
+    return FALSE;
+  }
+}
+
 int PatientRecord_Destroy(patientRecord *record) {
   if (*record != NULL) {
     // Destroy the strings first
