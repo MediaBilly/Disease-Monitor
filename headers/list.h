@@ -8,7 +8,6 @@ typedef struct list *List;
 
 int List_Initialize(List*);
 int List_Insert(List,patientRecord);
-int List_Contains(List,string);
 int List_Destroy(List*);
 
 #endif

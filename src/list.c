@@ -50,17 +50,6 @@ int List_Insert(List list,patientRecord record) {
   return TRUE;
 }
 
-int List_Contains(List list,string recordID) {
-  ListNode tmp = list->head;
-  while (tmp != NULL) {
-    if (!strcmp(PatientRecord_Get_recordID(tmp->value),recordID)) {
-      return TRUE;
-    }
-    tmp = tmp->next;
-  }
-  return FALSE;
-}
-
 int List_Destroy(List *list) {
   // Check if list was previously initialized
   if (*list != NULL) {

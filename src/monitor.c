@@ -8,12 +8,60 @@
 #include "../headers/patientRecord.h"
 #include "../headers/list.h"
 #include "../headers/hashtable.h"
+#include "../headers/avltree.h"
 
 struct disease_monitor {
   unsigned int totalRecords;
   List recordsList;
   HashTable recordsHashTable;
+  HashTable diseaseHashTable;
+  HashTable countryHashTable;
 };
+
+int InsertRecord(DiseaseMonitor monitor, patientRecord record) {
+  // Insert into the list
+  if (!List_Insert(monitor->recordsList,record)) {
+    return FALSE;
+  }
+  // Insert id into the recordsHashTable
+  if (!HashTable_Insert(monitor->recordsHashTable,PatientRecord_Get_recordID(record),record)) {
+    return FALSE;
+  }
+  // Insert into diseaseHashTable and tree
+  AvlTree diseaseTree = HashTable_SearchKey(monitor->diseaseHashTable,PatientRecord_Get_diseaseID(record));
+  // First record of record's disease in diseaseHashTable
+  if (diseaseTree == NULL) {
+    // Create new tree
+    if (!AvlTree_Create(&diseaseTree)) {
+      return FALSE;
+    }
+    if (!HashTable_Insert(monitor->diseaseHashTable,PatientRecord_Get_diseaseID(record),diseaseTree)) {
+      AvlTree_Destroy(&diseaseTree);
+      return FALSE;
+    }
+  }
+  if (!AvlTree_Insert(diseaseTree,record)) {
+      return FALSE;
+  }
+  // Insert into countryHashTable and tree
+  AvlTree countryTree = HashTable_SearchKey(monitor->countryHashTable,PatientRecord_Get_country(record));
+  // First record of record's disease in diseaseHashTable
+  if (countryTree == NULL) {
+    // Create new tree
+    if (!AvlTree_Create(&countryTree)) {
+      return FALSE;
+    }
+    if (!HashTable_Insert(monitor->countryHashTable,PatientRecord_Get_country(record),countryTree)) {
+      AvlTree_Destroy(&countryTree);
+      return FALSE;
+    }
+  }
+  if (!AvlTree_Insert(countryTree,record)) {
+      return FALSE;
+  }
+  monitor->totalRecords++;
+  return TRUE;
+}
 
 int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigned int diseaseHashtableNumOfEntries,unsigned int countryHashtableNumOfEntries,unsigned int bucketSize) {
   // Parameter checking
@@ -40,21 +88,27 @@ int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigne
   if (!HashTable_Create(&((*monitor)->recordsHashTable),diseaseHashtableNumOfEntries + countryHashtableNumOfEntries,bucketSize)) {
     return FALSE;
   }
+  if (!HashTable_Create(&((*monitor)->diseaseHashTable),diseaseHashtableNumOfEntries + countryHashtableNumOfEntries,bucketSize)) {
+    return FALSE;
+  }
+  if (!HashTable_Create(&((*monitor)->countryHashTable),diseaseHashtableNumOfEntries + countryHashtableNumOfEntries,bucketSize)) {
+    return FALSE;
+  }
   // Read file records
   string line = NULL;
   size_t len = 0;
   patientRecord record;
   (*monitor)->totalRecords = 0;
   while (getline(&line,&len,patientRecordsFile) != -1) {
-    //printf("%ld %s %ld %d\n",len,line,strlen(line),wordCount(line));
     if ((record = PatientRecord_Create(line)) != NULL) {
       // Check if record with the same id already exists and exit the program if so
       if (HashTable_SearchKey((*monitor)->recordsHashTable,PatientRecord_Get_recordID(record)) == NULL) {
         // Insert record to the data structures(list and binary tree hash tables)
-        List_Insert((*monitor)->recordsList,record);
-        HashTable_Insert((*monitor)->recordsHashTable,PatientRecord_Get_recordID(record),record);
-        (*monitor)->totalRecords++;
-        //printf("%s\n",PatientRecord_Get_recordID(record));
+        if (!InsertRecord(*monitor,record)) {
+          PatientRecord_Destroy(&record);
+          free(line);
+          return FALSE;
+        }
       } else {
         printf("Record with id %s was found twice in patientRecordsFile.Exiting...\n",PatientRecord_Get_recordID(record));
         PatientRecord_Destroy(&record);
@@ -136,6 +190,8 @@ int DiseaseMonitror_Destroy(DiseaseMonitor *monitor) {
     // Destroy data structures
     // Destroy function typecast:(int (*)(void**))func_name 
     HashTable_Destroy(&((*monitor)->recordsHashTable),NULL);
+    HashTable_Destroy(&((*monitor)->diseaseHashTable),(int (*)(void**))AvlTree_Destroy);
+    HashTable_Destroy(&((*monitor)->countryHashTable),(int (*)(void**))AvlTree_Destroy);
     List_Destroy(&((*monitor)->recordsList));
     // Destroy monitor itself
     free(*monitor);

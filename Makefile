@@ -1,6 +1,6 @@
 CC = gcc
 FLAGS = -Wall -g3
-TARGETS = src/list.o src/main.o src/monitor.o src/patientRecord.o src/utilities.o src/hashtable.o
+TARGETS = src/list.o src/main.o src/monitor.o src/patientRecord.o src/utilities.o src/hashtable.o src/avltree.o
 
 diseaseMonitor:$(TARGETS)
 	$(CC) $(FLAGS) -o diseaseMonitor $(TARGETS)
@@ -22,6 +22,9 @@ src/utilities.o:src/utilities.c
 
 src/hashtable.o:src/hashtable.c
 	$(CC) $(FLAGS) -o src/hashtable.o -c src/hashtable.c
+
+src/avltree.o:src/avltree.c
+	$(CC) $(FLAGS) -o src/avltree.o -c src/avltree.c
 
 .PHONY : clean
 
