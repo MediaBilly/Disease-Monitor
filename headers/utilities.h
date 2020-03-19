@@ -15,5 +15,7 @@ int DestroyString(string*);
 unsigned int wordCount(string);
 string readNextWord(int*);
 void IgnoreRemainingInput();
+string IgnoreNewLine(string);
+string* SplitString(string,string);
 
 #endif

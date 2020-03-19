@@ -7,7 +7,8 @@
 typedef struct patient_record *patientRecord;
 
 // Creates a patientRecord object
-patientRecord PatientRecord_Create(string);
+patientRecord PatientRecord_CreateFromString(string);
+patientRecord PatientRecord_Create(string,string,string,string,string,string,string);
 // Returns TRUE if patientRecord's patient exited the hospital and FALSE otherwise
 int PatientRecord_Exited(patientRecord);
 // Getters

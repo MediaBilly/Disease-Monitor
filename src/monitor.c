@@ -100,7 +100,7 @@ int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigne
   patientRecord record;
   (*monitor)->totalRecords = 0;
   while (getline(&line,&len,patientRecordsFile) != -1) {
-    if ((record = PatientRecord_Create(line)) != NULL) {
+    if ((record = PatientRecord_CreateFromString(line)) != NULL) {
       // Check if record with the same id already exists and exit the program if so
       if (HashTable_SearchKey((*monitor)->recordsHashTable,PatientRecord_Get_recordID(record)) == NULL) {
         // Insert record to the data structures(list and binary tree hash tables)
@@ -123,13 +123,20 @@ int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigne
 }
 
 int DiseaseMonitor_Run(DiseaseMonitor monitor) {
-  int running = TRUE,lastword;
-  string command;
+  int running = TRUE;
+  string line = NULL,command;
+  string *argv;
+  size_t len;
+  unsigned int argc;
   // Execute commands until /exit is given
   while (running) {
     // Read command name
     putchar('>');
-    command = readNextWord(&lastword);
+    getline(&line,&len,stdin);
+    IgnoreNewLine(line);
+    argc = wordCount(line);
+    argv = SplitString(line," ");
+    command = argv[0];
     // Determine command type
     if (!strcmp("/globalDiseaseStats",command)) {
       // TODO
@@ -140,47 +147,45 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
     } else if (!strcmp("/topk-Countries",command)) {
       // TODO
     } else if (!strcmp("/insertPatientRecord",command)) {
-      // TODO
+      // Usage check
+      if (argc == 7 || argc == 8) {
+        patientRecord record;
+        if ((record = PatientRecord_Create(argv[1],argv[2],argv[3],argv[4],argv[5],argv[6],argc == 8 ? argv[7] : "-")) == NULL) {
+          return FALSE;
+        } 
+        if (!InsertRecord(monitor,record)) {
+          return FALSE;
+        }
+      } else {
+        printf("Usage:/insertPatientRecord recordID patientFirstName patientLastName diseaseID country entryDate [exitDate]\n");
+      }
     } else if (!strcmp("/recordPatientExit",command)) {
       // Usage check
-      if (!lastword) {
-        // Read recordID
-        string recordID = readNextWord(&lastword);
-        // Usage check
-        if (!lastword) {
-          string exitDate = readNextWord(&lastword);
-          // Usage check
-          if (lastword) {
-            // Check if patient with that name exists
-            patientRecord record;
-            if ((record = (patientRecord)HashTable_SearchKey(monitor->recordsHashTable,recordID)) != NULL) {
-              PatientRecord_Exit(record,exitDate);
-            } else {
-              printf("Patient with ID %s does not exist.\n",recordID);
-            }
-          } else {
-            printf("Usage:/recordPatientExit recordID exitDate\n");
-            IgnoreRemainingInput();
-          }
-          DestroyString(&exitDate);
+      if (argc == 3) {
+        // Check if patient with that name exists
+        patientRecord record;
+        if ((record = (patientRecord)HashTable_SearchKey(monitor->recordsHashTable,argv[1])) != NULL) {
+          PatientRecord_Exit(record,argv[2]);
         } else {
-          printf("Usage:/recordPatientExit recordID exitDate\n");
+          printf("Patient with ID %s does not exist.\n",argv[1]);
         }
-        DestroyString(&recordID);
       } else {
         printf("Usage:/recordPatientExit recordID exitDate\n");
       }
     } else if (!strcmp("/numCurrentPatients",command)) {
       // TODO
     } else if (!strcmp("/exit",command)) {
-      running = FALSE;
+      // Usage check
+      if (argc == 1) {
+        running = FALSE;
+      } else {
+        printf("Usage:/exit\n");
+      }
     } else {
       printf("Command %s not found.\n",command);
-      if (!lastword) {
-        IgnoreRemainingInput();
-      }
     }
-    DestroyString(&command);
+    free(argv);
+    DestroyString(&line);
   }
   return TRUE;
 }

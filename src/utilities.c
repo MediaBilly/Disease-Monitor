@@ -86,3 +86,23 @@ string readNextWord(int *lastword) {
 void IgnoreRemainingInput() {
     while (getchar() != '\n');
 }
+
+string IgnoreNewLine(string str) {
+  str[strlen(str) - 1] = 0;
+  return str;
+}
+
+string* SplitString(string str,string delimeter) {
+  string *array;
+  if ((array = (string*)malloc(wordCount(str)*sizeof(string))) == NULL) {
+    not_enough_memory();
+    return NULL;
+  }
+  unsigned int index = 0;
+  string tmp = strtok(str,delimeter);
+  while (tmp != NULL) {
+    array[index++] = tmp;
+    tmp = strtok(NULL," ");
+  }
+  return array;
+}
