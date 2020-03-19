@@ -128,7 +128,7 @@ void globalDiseaseStats(string disease,void *tree,int argc,va_list valist) {
   if (argc == 2) {
     time_t date1 = va_arg(valist,time_t);
     time_t date2 = va_arg(valist,time_t);
-    cases = AvlTree_NumRecordsInDateRange((AvlTree)tree,date1,date2);
+    cases = AvlTree_NumRecordsInDateRange((AvlTree)tree,date1,date2,NULL);
   } else {
     cases = AvlTree_NumRecords((AvlTree)tree);
   }
@@ -163,7 +163,7 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
               time_t date2 = mktime(&tmpTime);
               HashTable_ExecuteFunctionForAllKeys(monitor->diseaseHashTable,globalDiseaseStats,2,date1,date2);
             } else {
-              printf("date1 parsing failed.\n");
+              printf("date2 parsing failed.\n");
             }
           } else {
             printf("date1 parsing failed.\n");
@@ -175,7 +175,33 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
         printf("Usage:/globalDiseaseStats [date1 date2]\n");
       }
     } else if (!strcmp("/diseaseFrequency",command)) {
-      // TODO
+      // Usage check
+      if (argc == 4 || argc == 5) {
+        AvlTree virusTree;
+        if ((virusTree = (AvlTree)HashTable_SearchKey(monitor->diseaseHashTable,argv[1])) != NULL) {
+          struct tm tmpTime;
+          memset(&tmpTime,0,sizeof(struct tm));
+          if (strptime(argv[2],"%d-%m-%Y",&tmpTime) != NULL) {
+            time_t date1 = mktime(&tmpTime);
+            if (strptime(argv[3],"%d-%m-%Y",&tmpTime) != NULL) {
+              time_t date2 = mktime(&tmpTime);
+              if (argc == 5) {
+                printf("%s total cases in %s:%u\n",argv[1],argv[4],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,argv[4]));
+              } else {
+                printf("%s total cases:%u\n",argv[1],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,NULL));
+              }
+            } else {
+              printf("date2 parsing failed.\n");
+            }
+          } else {
+            printf("date1 parsing failed.\n");
+          }
+        } else {
+          printf("%s total cases:%u\n",argv[1],0);
+        }
+      } else {
+        printf("Usage:/diseaseFrequency virusName date1 date2 [country]\n");
+      }
     } else if (!strcmp("/topk-Diseases",command)) {
       // TODO
     } else if (!strcmp("/topk-Countries",command)) {

@@ -149,25 +149,26 @@ unsigned int AvlTree_NumRecords(AvlTree tree) {
 	return tree == NULL ? 0 : tree->count;
 }
 
-unsigned int RangeQuery(TreeNode root,time_t date1,time_t date2) {
+unsigned int RangeQuery(TreeNode root,time_t date1,time_t date2,string country) {
 	unsigned int total = 0;
 	if (root != NULL) {
-		//printf("[%ld %ld] %ld\n",date1,date2,PatientRecord_Get_entryDate(root->data));
 		if (difftime(date1,PatientRecord_Get_entryDate(root->data)) < 0) {
-			total += RangeQuery(root->left,date1,date2);
+			total += RangeQuery(root->left,date1,date2,country);
 		}
 		if (difftime(PatientRecord_Get_entryDate(root->data),date1) >= 0 && difftime(PatientRecord_Get_entryDate(root->data),date2) <= 0) {
-			total += 1;
+			if (country == NULL || (country != NULL && !strcmp(PatientRecord_Get_country(root->data),country))) {
+				total += 1;
+			}
 		}
 		if (difftime(date2,PatientRecord_Get_entryDate(root->data)) >= 0) {
-			total += RangeQuery(root->right,date1,date2);
+			total += RangeQuery(root->right,date1,date2,country);
 		}
 	}
 	return total;
 }
 
-unsigned int AvlTree_NumRecordsInDateRange(AvlTree tree,time_t date1,time_t date2) {
-	return RangeQuery(tree->root,date1,date2);
+unsigned int AvlTree_NumRecordsInDateRange(AvlTree tree,time_t date1,time_t date2,string country) {
+	return RangeQuery(tree->root,date1,date2,country);
 }
 
 void Destroy(TreeNode node) {
