@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include "../headers/hashtable.h"
 #include "../headers/utilities.h"
 
@@ -114,6 +115,25 @@ void Bucket_Destroy(char *bucketData,unsigned int bucketSize,int (*DestroyValueS
   free(bucketData);
 }
 
+void Bucket_ExecuteFuncForAllKeys(char *bucketData,unsigned int bucketSize,void (*func)(string,void*,int,va_list),int argc,va_list valist) {
+  size_t recordSize = sizeof(string) + sizeof(void*);
+  unsigned int offset = 0;
+  // Iterate through all bucket's records
+  for (offset = 0;offset <= bucketSize - sizeof(void*) - recordSize;offset += recordSize) {
+    // Get key
+    string currentKey;
+    memcpy(&currentKey,bucketData + offset,sizeof(string));
+    if (currentKey != NULL) {
+      // Get value
+      void *currentValue;
+      memcpy(&currentValue,bucketData + offset + sizeof(string),sizeof(void*));
+      (*func)(currentKey,currentValue,argc,valist);
+    } else {
+      break;
+    }
+  }
+}
+
 // Creates a new bucket and makes the given one point to the new one
 int Bucket_CreateNext(char *lastBucketData,unsigned int bucketSize) {
   // Create new bucket
@@ -188,6 +208,24 @@ void* HashTable_SearchKey(HashTable table,string key) {
     // Not found(no bucket in current entry)
     return NULL;
   }
+}
+
+void HashTable_ExecuteFunctionForAllKeys(HashTable table,void (*func)(string,void*,int,va_list),int argc, ... ) {
+  if (table != NULL) {
+    unsigned int curEntry;
+    // Loop through all the buckets
+    for (curEntry = 0; curEntry < table->numOfEntries; curEntry++) {
+      char *currentBucket = table->entries[curEntry];
+      while (currentBucket != NULL) {
+        char *nextBucket = Bucket_Next(currentBucket,table->bucketSize);
+        va_list valist;
+        va_start(valist,argc);
+        Bucket_ExecuteFuncForAllKeys(currentBucket,table->bucketSize,func,argc,valist);
+        va_end(valist);
+        currentBucket = nextBucket;
+      }
+    }
+  } 
 }
 
 int HashTable_Destroy(HashTable *table,int (*DestroyValueStruct)(void**)) {

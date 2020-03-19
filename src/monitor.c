@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <time.h>
 #include "../headers/monitor.h"
 #include "../headers/utilities.h"
@@ -122,6 +123,18 @@ int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigne
   return TRUE;
 }
 
+void globalDiseaseStats(string disease,void *tree,int argc,va_list valist) {
+  unsigned int cases;
+  if (argc == 2) {
+    time_t date1 = va_arg(valist,time_t);
+    time_t date2 = va_arg(valist,time_t);
+    cases = AvlTree_NumRecordsInDateRange((AvlTree)tree,date1,date2);
+  } else {
+    cases = AvlTree_NumRecords((AvlTree)tree);
+  }
+  printf("%s: %u cases\n",disease,cases);
+}
+
 int DiseaseMonitor_Run(DiseaseMonitor monitor) {
   int running = TRUE;
   string line = NULL,command;
@@ -139,7 +152,28 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
     command = argv[0];
     // Determine command type
     if (!strcmp("/globalDiseaseStats",command)) {
-      // TODO
+      // Usage check
+      if (argc == 1 || argc == 3) {
+        if (argc == 3) {
+          struct tm tmpTime;
+          memset(&tmpTime,0,sizeof(struct tm));
+          if (strptime(argv[1],"%d-%m-%Y",&tmpTime) != NULL) {
+            time_t date1 = mktime(&tmpTime);
+            if (strptime(argv[2],"%d-%m-%Y",&tmpTime) != NULL) {
+              time_t date2 = mktime(&tmpTime);
+              HashTable_ExecuteFunctionForAllKeys(monitor->diseaseHashTable,globalDiseaseStats,2,date1,date2);
+            } else {
+              printf("date1 parsing failed.\n");
+            }
+          } else {
+            printf("date1 parsing failed.\n");
+          }
+        } else if (argc == 1) {
+          HashTable_ExecuteFunctionForAllKeys(monitor->diseaseHashTable,globalDiseaseStats,0);
+        }
+      } else {
+        printf("Usage:/globalDiseaseStats [date1 date2]\n");
+      }
     } else if (!strcmp("/diseaseFrequency",command)) {
       // TODO
     } else if (!strcmp("/topk-Diseases",command)) {
