@@ -10,6 +10,7 @@
 #include "../headers/list.h"
 #include "../headers/hashtable.h"
 #include "../headers/avltree.h"
+#include "../headers/maxheap.h"
 
 struct disease_monitor {
   unsigned int totalRecords;
@@ -128,11 +129,35 @@ void globalDiseaseStats(string disease,void *tree,int argc,va_list valist) {
   if (argc == 2) {
     time_t date1 = va_arg(valist,time_t);
     time_t date2 = va_arg(valist,time_t);
-    cases = AvlTree_NumRecordsInDateRange((AvlTree)tree,date1,date2,NULL);
+    cases = AvlTree_NumRecordsInDateRange((AvlTree)tree,date1,date2,NULL,NULL);
   } else {
     cases = AvlTree_NumRecords((AvlTree)tree);
   }
   printf("%s: %u cases\n",disease,cases);
+}
+
+void insertDiseaseCasesOfCountryToMaxHeap(string disease,void *tree,int argc,va_list valist) {
+  MaxHeap heap = va_arg(valist,MaxHeap);
+  string country = va_arg(valist,string);
+  if (argc == 4) {
+    time_t date1 = va_arg(valist,time_t);
+    time_t date2 = va_arg(valist,time_t);
+    MaxHeap_Insert(heap,disease,AvlTree_NumRecordsInDateRange((AvlTree)tree,date1,date2,country,NULL));
+  } else {
+    MaxHeap_Insert(heap,disease,AvlTree_NumRecordsOfCountry((AvlTree)tree,country));
+  }
+}
+
+void insertCountryCasesWithDiseaseToMaxHeap(string country,void *tree,int argc,va_list valist) {
+  MaxHeap heap = va_arg(valist,MaxHeap);
+  string disease = va_arg(valist,string);
+  if (argc == 4) {
+    time_t date1 = va_arg(valist,time_t);
+    time_t date2 = va_arg(valist,time_t);
+    MaxHeap_Insert(heap,country,AvlTree_NumRecordsInDateRange((AvlTree)tree,date1,date2,NULL,disease));
+  } else {
+    MaxHeap_Insert(heap,country,AvlTree_NumRecordsWithDisease((AvlTree)tree,disease));
+  }
 }
 
 int DiseaseMonitor_Run(DiseaseMonitor monitor) {
@@ -186,9 +211,9 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
             if (strptime(argv[3],"%d-%m-%Y",&tmpTime) != NULL) {
               time_t date2 = mktime(&tmpTime);
               if (argc == 5) {
-                printf("%s total cases in %s:%u\n",argv[1],argv[4],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,argv[4]));
+                printf("%s total cases in %s:%u\n",argv[1],argv[4],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,argv[4],NULL));
               } else {
-                printf("%s total cases:%u\n",argv[1],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,NULL));
+                printf("%s total cases:%u\n",argv[1],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,NULL,NULL));
               }
             } else {
               printf("date2 parsing failed.\n");
@@ -203,9 +228,87 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
         printf("Usage:/diseaseFrequency virusName date1 date2 [country]\n");
       }
     } else if (!strcmp("/topk-Diseases",command)) {
-      // TODO
+      // Usage check
+      if (argc == 3 || argc == 5) {
+        // Construct max heap
+        MaxHeap diseaseHeap;
+        if (!MaxHeap_Create(&diseaseHeap)) {
+          return FALSE;
+        }
+        if (argc == 5) {
+          struct tm tmpTime;
+          memset(&tmpTime,0,sizeof(struct tm));
+          if (strptime(argv[3],"%d-%m-%Y",&tmpTime) != NULL) {
+            time_t date1 = mktime(&tmpTime);
+            if (strptime(argv[4],"%d-%m-%Y",&tmpTime) != NULL) {
+              time_t date2 = mktime(&tmpTime);
+              HashTable_ExecuteFunctionForAllKeys(monitor->diseaseHashTable,insertDiseaseCasesOfCountryToMaxHeap,4,diseaseHeap,argv[2],date1,date2);
+            } else {
+              printf("date2 parsing failed.\n");
+            }
+          } else {
+            printf("date1 parsing failed.\n");
+          }
+        } else {
+          HashTable_ExecuteFunctionForAllKeys(monitor->diseaseHashTable,insertDiseaseCasesOfCountryToMaxHeap,2,diseaseHeap,argv[2]);
+        }
+        int k = atoi(argv[1]);
+        printf("Top-%u diseases at %s:\n",k,argv[2]);
+        HeapData data;
+        while (k-- > 0) {
+          data = MaxHeap_ExtractMax(diseaseHeap);
+          if (data != NULL) {
+            printf("%s:%u cases\n",MaxHeapData_GetKey(data),MaxHeapData_GetValue(data));
+            MaxHeapData_Destroy(&data);
+          } else {
+            break;
+          }
+        }
+        MaxHeap_Destroy(&diseaseHeap);
+      } else {
+        printf("Usage:/topk-Diseases k country [date1 date2]\n");
+      }
     } else if (!strcmp("/topk-Countries",command)) {
-      // TODO
+      // Usage check
+      if (argc == 3 || argc == 5) {
+        // Construct max heap
+        MaxHeap countryHeap;
+        if (!MaxHeap_Create(&countryHeap)) {
+          return FALSE;
+        }
+        if (argc == 5) {
+          struct tm tmpTime;
+          memset(&tmpTime,0,sizeof(struct tm));
+          if (strptime(argv[3],"%d-%m-%Y",&tmpTime) != NULL) {
+            time_t date1 = mktime(&tmpTime);
+            if (strptime(argv[4],"%d-%m-%Y",&tmpTime) != NULL) {
+              time_t date2 = mktime(&tmpTime);
+              HashTable_ExecuteFunctionForAllKeys(monitor->countryHashTable,insertCountryCasesWithDiseaseToMaxHeap,4,countryHeap,argv[2],date1,date2);
+            } else {
+              printf("date2 parsing failed.\n");
+            }
+          } else {
+            printf("date1 parsing failed.\n");
+          }
+        } else {
+          HashTable_ExecuteFunctionForAllKeys(monitor->countryHashTable,insertCountryCasesWithDiseaseToMaxHeap,2,countryHeap,argv[2]);
+        }
+        int k = atoi(argv[1]);
+        printf("Top-%u countries with %s:\n",k,argv[2]);
+        HeapData data;
+        while (k-- > 0) {
+          data = MaxHeap_ExtractMax(countryHeap);
+          if (data != NULL) {
+            printf("%s:%u cases\n",MaxHeapData_GetKey(data),MaxHeapData_GetValue(data));
+            MaxHeapData_Destroy(&data);
+          } else {
+            break;
+          }
+        }
+        MaxHeap_Destroy(&countryHeap);
+      } else {
+        printf("Usage:/topk-Countries k country [date1 date2]\n");
+      }
     } else if (!strcmp("/insertPatientRecord",command)) {
       // Usage check
       if (argc == 7 || argc == 8) {

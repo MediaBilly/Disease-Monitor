@@ -84,7 +84,7 @@ void Rebalance(TreeNode *dest) {
 			RotateLeft(dest);
 		}
     //LL
-		else if((*dest)->diff < 0 && (*dest)->left->diff < 0){
+		else if((*dest)->diff < 0 && (*dest)->left->diff < 0) {
 			RotateRight(dest);
 		}
     //LR
@@ -149,26 +149,48 @@ unsigned int AvlTree_NumRecords(AvlTree tree) {
 	return tree == NULL ? 0 : tree->count;
 }
 
-unsigned int RangeQuery(TreeNode root,time_t date1,time_t date2,string country) {
+unsigned int EqualQuery(TreeNode root,string country,string disease) {
+	unsigned int total = 0;
+	if (root != NULL) {
+		total += EqualQuery(root->left,country,disease);
+		if ((country != NULL && disease == NULL && !strcmp(PatientRecord_Get_country(root->data),country)) || (disease != NULL && country == NULL && !strcmp(PatientRecord_Get_diseaseID(root->data),disease))) {
+			total += 1;
+		}
+		total += EqualQuery(root->right,country,disease);
+	}
+	return total;
+}
+
+unsigned int AvlTree_NumRecordsOfCountry(AvlTree tree,string country) {
+	return EqualQuery(tree->root,country,NULL);
+}
+
+unsigned int AvlTree_NumRecordsWithDisease(AvlTree tree,string disease) {
+	return EqualQuery(tree->root,NULL,disease);
+}
+
+unsigned int RangeQuery(TreeNode root,time_t date1,time_t date2,string country,string disease) {
 	unsigned int total = 0;
 	if (root != NULL) {
 		if (difftime(date1,PatientRecord_Get_entryDate(root->data)) < 0) {
-			total += RangeQuery(root->left,date1,date2,country);
+			total += RangeQuery(root->left,date1,date2,country,disease);
 		}
 		if (difftime(PatientRecord_Get_entryDate(root->data),date1) >= 0 && difftime(PatientRecord_Get_entryDate(root->data),date2) <= 0) {
-			if (country == NULL || (country != NULL && !strcmp(PatientRecord_Get_country(root->data),country))) {
+			if ((country == NULL && disease == NULL) || (country != NULL && disease == NULL && !strcmp(PatientRecord_Get_country(root->data),country)) 
+			|| (disease != NULL && country == NULL && !strcmp(PatientRecord_Get_diseaseID(root->data),disease))
+			|| (country != NULL && disease != NULL && !strcmp(PatientRecord_Get_country(root->data),country) && !strcmp(PatientRecord_Get_diseaseID(root->data),disease))) {
 				total += 1;
 			}
 		}
 		if (difftime(date2,PatientRecord_Get_entryDate(root->data)) >= 0) {
-			total += RangeQuery(root->right,date1,date2,country);
+			total += RangeQuery(root->right,date1,date2,country,disease);
 		}
 	}
 	return total;
 }
 
-unsigned int AvlTree_NumRecordsInDateRange(AvlTree tree,time_t date1,time_t date2,string country) {
-	return RangeQuery(tree->root,date1,date2,country);
+unsigned int AvlTree_NumRecordsInDateRange(AvlTree tree,time_t date1,time_t date2,string country,string disease) {
+	return RangeQuery(tree->root,date1,date2,country,disease);
 }
 
 void Destroy(TreeNode node) {

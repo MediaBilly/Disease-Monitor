@@ -1,6 +1,6 @@
 CC = gcc
 FLAGS = -Wall
-TARGETS = src/list.o src/main.o src/monitor.o src/patientRecord.o src/utilities.o src/hashtable.o src/avltree.o
+TARGETS = src/list.o src/main.o src/monitor.o src/patientRecord.o src/utilities.o src/hashtable.o src/avltree.o src/maxheap.o
 
 diseaseMonitor:$(TARGETS)
 	$(CC) $(FLAGS) -o diseaseMonitor $(TARGETS)
@@ -25,6 +25,9 @@ src/hashtable.o:src/hashtable.c
 
 src/avltree.o:src/avltree.c
 	$(CC) $(FLAGS) -o src/avltree.o -c src/avltree.c
+
+src/maxheap.o:src/maxheap.c
+	$(CC) $(FLAGS) -o src/maxheap.o -c src/maxheap.c
 
 .PHONY : clean
 
