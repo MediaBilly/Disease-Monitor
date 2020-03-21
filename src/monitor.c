@@ -160,6 +160,10 @@ void insertCountryCasesWithDiseaseToMaxHeap(string country,void *tree,int argc,v
   }
 }
 
+void numCurrentPatients(string disease,void *tree,int srgc,va_list valist) {
+  printf("Patients still hospitalized with %s:%u\n",disease,tree != NULL ? AvlTree_NumRecordsStillHospitalized((AvlTree)tree) : 0);
+}
+
 int DiseaseMonitor_Run(DiseaseMonitor monitor) {
   int running = TRUE;
   string line = NULL,command;
@@ -336,7 +340,17 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
         printf("Usage:/recordPatientExit recordID exitDate\n");
       }
     } else if (!strcmp("/numCurrentPatients",command)) {
-      // TODO
+      // Usage check
+      if (argc == 1 || argc == 2) {
+        if (argc == 2) {
+          AvlTree diseaseTree = HashTable_SearchKey(monitor->diseaseHashTable,argv[1]);
+          printf("Patients still hospitalized with %s:%u\n",argv[1],diseaseTree != NULL ? AvlTree_NumRecordsStillHospitalized(diseaseTree) : 0);
+        } else {
+          HashTable_ExecuteFunctionForAllKeys(monitor->diseaseHashTable,numCurrentPatients,0);
+        }
+      } else {
+        printf("Usage:/numCurrentPatients [disease]\n");
+      }
     } else if (!strcmp("/exit",command)) {
       // Usage check
       if (argc == 1) {

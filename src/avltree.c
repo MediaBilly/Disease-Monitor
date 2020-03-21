@@ -193,6 +193,22 @@ unsigned int AvlTree_NumRecordsInDateRange(AvlTree tree,time_t date1,time_t date
 	return RangeQuery(tree->root,date1,date2,country,disease);
 }
 
+unsigned int HospitalizedQuery(TreeNode root) {
+	unsigned int total = 0;
+	if (root != NULL) {
+		total += HospitalizedQuery(root->left);
+		if (!PatientRecord_Exited(root->data)) {
+			total += 1;
+		}
+		total += HospitalizedQuery(root->right);
+	}
+	return total;
+}
+
+unsigned int AvlTree_NumRecordsStillHospitalized(AvlTree tree) {
+	return HospitalizedQuery(tree->root);
+}
+
 void Destroy(TreeNode node) {
 	if(node != NULL) {
 		Destroy(node->left);
