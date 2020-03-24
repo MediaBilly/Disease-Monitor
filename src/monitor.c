@@ -13,7 +13,6 @@
 #include "../headers/maxheap.h"
 
 struct disease_monitor {
-  unsigned int totalRecords;
   List recordsList;
   HashTable recordsHashTable;
   HashTable diseaseHashTable;
@@ -61,7 +60,6 @@ int InsertRecord(DiseaseMonitor monitor, patientRecord record) {
   if (!AvlTree_Insert(countryTree,record)) {
       return FALSE;
   }
-  monitor->totalRecords++;
   return TRUE;
 }
 
@@ -100,7 +98,6 @@ int DiseaseMonitor_Init(DiseaseMonitor *monitor,FILE *patientRecordsFile,unsigne
   string line = NULL;
   size_t len = 0;
   patientRecord record;
-  (*monitor)->totalRecords = 0;
   while (getline(&line,&len,patientRecordsFile) != -1) {
     if ((record = PatientRecord_CreateFromString(line)) != NULL) {
       // Check if record with the same id already exists and exit the program if so
