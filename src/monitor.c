@@ -130,7 +130,7 @@ void globalDiseaseStats(string disease,void *tree,int argc,va_list valist) {
   } else {
     cases = AvlTree_NumRecords((AvlTree)tree);
   }
-  printf("%s: %u cases\n",disease,cases);
+  printf("%s %u\n",disease,cases);
 }
 
 void insertDiseaseCasesOfCountryToMaxHeap(string disease,void *tree,int argc,va_list valist) {
@@ -158,7 +158,7 @@ void insertCountryCasesWithDiseaseToMaxHeap(string country,void *tree,int argc,v
 }
 
 void numCurrentPatients(string disease,void *tree,int srgc,va_list valist) {
-  printf("Patients still hospitalized with %s:%u\n",disease,tree != NULL ? AvlTree_NumRecordsStillHospitalized((AvlTree)tree) : 0);
+  printf("%s %u\n",disease,tree != NULL ? AvlTree_NumRecordsStillHospitalized((AvlTree)tree) : 0);
 }
 
 int DiseaseMonitor_Run(DiseaseMonitor monitor) {
@@ -170,9 +170,15 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
   // Execute commands until /exit is given
   while (running) {
     // Read command name
-    putchar('>');
-    getline(&line,&len,stdin);
+    if(getline(&line,&len,stdin) == -1) {
+      running = FALSE;
+      break;
+    }
     IgnoreNewLine(line);
+    if (strlen(line) == 0) {
+      DestroyString(&line);
+      continue;
+    }
     argc = wordCount(line);
     argv = SplitString(line," ");
     command = argv[0];
@@ -211,11 +217,7 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
             time_t date1 = mktime(&tmpTime);
             if (strptime(argv[3],"%d-%m-%Y",&tmpTime) != NULL) {
               time_t date2 = mktime(&tmpTime);
-              if (argc == 5) {
-                printf("%s total cases in %s:%u\n",argv[1],argv[4],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,argv[4],NULL));
-              } else {
-                printf("%s total cases:%u\n",argv[1],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,NULL,NULL));
-              }
+              printf("%s %u\n",argv[1],AvlTree_NumRecordsInDateRange(virusTree,date1,date2,argc == 5 ? argv[4] : NULL,NULL));
             } else {
               printf("date2 parsing failed.\n");
             }
@@ -223,7 +225,7 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
             printf("date1 parsing failed.\n");
           }
         } else {
-          printf("%s total cases:%u\n",argv[1],0);
+          printf("%s %u\n",argv[1],0);
         }
       } else {
         printf("Usage:/diseaseFrequency virusName date1 date2 [country]\n");
@@ -254,12 +256,12 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
           HashTable_ExecuteFunctionForAllKeys(monitor->diseaseHashTable,insertDiseaseCasesOfCountryToMaxHeap,2,diseaseHeap,argv[2]);
         }
         int k = atoi(argv[1]);
-        printf("Top-%u diseases at %s:\n",k,argv[2]);
+        //printf("Top-%u diseases at %s:\n",k,argv[2]);
         HeapData data;
         while (k-- > 0) {
           data = MaxHeap_ExtractMax(diseaseHeap);
           if (data != NULL) {
-            printf("%s:%u cases\n",MaxHeapData_GetKey(data),MaxHeapData_GetValue(data));
+            printf("%s %u\n",MaxHeapData_GetKey(data),MaxHeapData_GetValue(data));
             MaxHeapData_Destroy(&data);
           } else {
             break;
@@ -295,12 +297,12 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
           HashTable_ExecuteFunctionForAllKeys(monitor->countryHashTable,insertCountryCasesWithDiseaseToMaxHeap,2,countryHeap,argv[2]);
         }
         int k = atoi(argv[1]);
-        printf("Top-%u countries with %s:\n",k,argv[2]);
+        //printf("Top-%u countries with %s:\n",k,argv[2]);
         HeapData data;
         while (k-- > 0) {
           data = MaxHeap_ExtractMax(countryHeap);
           if (data != NULL) {
-            printf("%s:%u cases\n",MaxHeapData_GetKey(data),MaxHeapData_GetValue(data));
+            printf("%s %u\n",MaxHeapData_GetKey(data),MaxHeapData_GetValue(data));
             MaxHeapData_Destroy(&data);
           } else {
             break;
@@ -341,7 +343,7 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
       if (argc == 1 || argc == 2) {
         if (argc == 2) {
           AvlTree diseaseTree = HashTable_SearchKey(monitor->diseaseHashTable,argv[1]);
-          printf("Patients still hospitalized with %s:%u\n",argv[1],diseaseTree != NULL ? AvlTree_NumRecordsStillHospitalized(diseaseTree) : 0);
+          printf("%s %u\n",argv[1],diseaseTree != NULL ? AvlTree_NumRecordsStillHospitalized(diseaseTree) : 0);
         } else {
           HashTable_ExecuteFunctionForAllKeys(monitor->diseaseHashTable,numCurrentPatients,0);
         }
@@ -352,6 +354,7 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
       // Usage check
       if (argc == 1) {
         running = FALSE;
+        printf("exiting\n");
       } else {
         printf("Usage:/exit\n");
       }

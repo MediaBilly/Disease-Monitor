@@ -161,6 +161,7 @@ patientRecord PatientRecord_Create(string recordID,string patientFirstName,strin
     printf("Ignoring record %s %s %s %s %s %s %s because entryDate is later than exitDate\n",record->recordID,record->patientFirstName,record->patientLastName,record->diseaseID,record->country,date1,date2);
     PatientRecord_Destroy(&record);
   }
+  printf("Record added\n");
   return record;
 }
 
@@ -196,7 +197,7 @@ int PatientRecord_Exit(patientRecord record,string exitDateStr) {
     if (difftime((exitDate = mktime(&tmpTime)),record->entryDate) >= 0) {
       record->exitDate = exitDate;
       record->exited = TRUE;
-      printf("exitDate successfully set to %s for patient with ID %s.\n",exitDateStr,record->recordID);
+      printf("Record updated\n");
       return TRUE;
     } else {
       printf("The exitDate of the record with id %s is earlier than it's entryDate.Ignoring update.\n",record->recordID);
