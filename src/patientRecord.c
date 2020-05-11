@@ -145,6 +145,7 @@ patientRecord PatientRecord_Create(string recordID,string patientFirstName,strin
   if (exitDate[0] != '-') {
     if (strptime(exitDate,"%d-%m-%Y",&tmpTime) == NULL) {
       printf("exitDate %s parsing failed!\n",exitDate);
+      PatientRecord_Destroy(&record);
       return NULL;
     } else {
       record->exitDate = mktime(&tmpTime);

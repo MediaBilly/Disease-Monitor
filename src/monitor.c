@@ -317,9 +317,22 @@ int DiseaseMonitor_Run(DiseaseMonitor monitor) {
       if (argc == 7 || argc == 8) {
         patientRecord record;
         if ((record = PatientRecord_Create(argv[1],argv[2],argv[3],argv[4],argv[5],argv[6],argc == 8 ? argv[7] : "-")) == NULL) {
-          return FALSE;
+          free(argv);
+          DestroyString(&line);
+          continue;
         } 
-        if (!InsertRecord(monitor,record)) {
+        if (HashTable_SearchKey(monitor->recordsHashTable,PatientRecord_Get_recordID(record)) == NULL) {
+          // Insert record to the data structures(list and binary tree hash tables)
+          if (!InsertRecord(monitor,record)) {
+            free(argv);
+            DestroyString(&line);
+            return FALSE;
+          }
+        } else {
+          printf("Record with id %s was found twice in patientRecordsFile.Exiting...\n",PatientRecord_Get_recordID(record));
+          PatientRecord_Destroy(&record);
+          free(argv);
+          DestroyString(&line);
           return FALSE;
         }
       } else {
